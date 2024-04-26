@@ -20,6 +20,7 @@ services:
       PORT: 4000
       NODE_ENV: production
       REDIS_CLUSTER_URLS: 'redis_1:6379,redis_2:6379,redis_3:6379,redis_4:6379,redis_5:6379,redis_6:6379'
+#      REDIS_CLUSTER_URLS: 'redis_1:6379,redis_2:6379,redis_3:6379'
     volumes:
       - .:/app
       - node_modules:/app/node_modules
@@ -54,7 +55,7 @@ services:
     command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
     networks:
       redis_cluster_net:
-        ipv4_address: 173.18.0.2
+        ipv4_address: 173.18.0.61
 
   redis_2:
     image: 'redis:latest'
@@ -67,7 +68,7 @@ services:
     command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
     networks:
       redis_cluster_net:
-        ipv4_address: 173.18.0.3
+        ipv4_address: 173.18.0.62
 
   redis_3:
     image: 'redis:latest'
@@ -80,7 +81,7 @@ services:
     command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
     networks:
       redis_cluster_net:
-        ipv4_address: 173.18.0.4
+        ipv4_address: 173.18.0.63
   
   redis_4:
     image: 'redis:latest'
@@ -93,7 +94,7 @@ services:
     command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
     networks:
       redis_cluster_net:
-        ipv4_address: 173.18.0.5
+        ipv4_address: 173.18.0.64
 
   redis_5:
     image: 'redis:latest'
@@ -106,8 +107,8 @@ services:
     command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
     networks:
       redis_cluster_net:
-        ipv4_address: 173.18.0.6
-  
+        ipv4_address: 173.18.0.65
+
   redis_6:
     image: 'redis:latest'
     container_name: redis_6
@@ -119,17 +120,23 @@ services:
     command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
     networks:
       redis_cluster_net:
-        ipv4_address: 173.18.0.7
+        ipv4_address: 173.18.0.66
 
   # Ephemeral container to create the Redis cluster connections.
   # Once the setup is done, this container shuts down
   # and the cluster can be used by the service app container
   cluster_initiator:
     container_name: cluster_initiator
-    build:
-      context: redis
-      dockerfile: Dockerfile
-    tty: true
+    image: redis:latest
+    command: /bin/sh -c "sleep 5 && \
+      echo 'yes' | redis-cli --cluster create \
+      173.18.0.61:6379 \
+      173.18.0.62:6379 \
+      173.18.0.63:6379 \
+      173.18.0.64:6379 \
+      173.18.0.65:6379 \
+      173.18.0.66:6379 \
+      --cluster-replicas 1"
     depends_on:
       - redis_1
       - redis_2
